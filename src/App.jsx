@@ -221,7 +221,7 @@ export default function App() {
   );
 
   // JIKA ROUTE ADALAH BENDAHARA (URL RAHASIA)
-  if (route === "#/bendahara") {
+  if (route === "#/AAAA") {
     return (
     <div className="page">
       <div className="blob blob-1" />
