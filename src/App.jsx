@@ -220,29 +220,9 @@ export default function App() {
     </div>
   );
 
-  // JIKA ROUTE ADALAH KLASEMEN
-  if (route === "#/klasemen") {
+  // JIKA ROUTE ADALAH BENDAHARA (URL RAHASIA)
+  if (route === "#/bendahara") {
     return (
-      <div className="page">
-        <div className="blob blob-1" />
-        <div className="blob blob-2" />
-        <div className="blob blob-3" />
-        
-        <div className="container" style={{ maxWidth: "800px" }}>``
-          <header className="header">
-             <div className="header-icon">🏅</div>
-             <h1 className="header-title">Papan Peringkat</h1>
-             <p className="header-subtitle">Status Pembayaran Uang Kas Kelas Real-Time</p>
-          </header>
-          {fetchingList && <p style={{textAlign:"center", color: "#63b3ed"}}>Mensinkronkan Data...</p>}
-          {renderLeaderboard(true)}
-        </div>
-      </div>
-    );
-  }
-
-  // JIKA ROUTE ADALAH BENDAHARA / DEFAULT
-  return (
     <div className="page">
       <div className="blob blob-1" />
       <div className="blob blob-2" />
@@ -402,12 +382,8 @@ export default function App() {
         <div className="info-card">
           <h3 className="info-title">ℹ️ Tautan Pintar</h3>
           <ol className="info-list">
-            <li>Kamu sekarang memiliki <b>dua halaman</b>.</li>
-            <li>Ini adalah Halaman Bendahara (Form).</li>
-            <li>Untuk layar proyektor / publik, gunakan tautan: 
-              <br/>
-              <a href="#/klasemen" style={{color: "#63b3ed", fontWeight: "bold"}}>Buka Halaman Klasemen ↗</a>
-            </li>
+            <li>Ini adalah Halaman Bendahara (Rahasia).</li>
+            <li>Bagikan ke siswa tautan: <a href="/" style={{color: "#63b3ed", fontWeight: "bold"}}>Halaman Klasemen Publik ↗</a></li>
           </ol>
         </div>
         </div> {/* End Kiri */}
@@ -418,6 +394,26 @@ export default function App() {
         </div> {/* End Kanan */}
         </div> {/* End Main Content */}
 
+      </div>
+    </div>
+    );
+  }
+
+  // DEFAULT ROUTE: Tampilkan Klasemen (halaman publik)
+  return (
+    <div className="page">
+      <div className="blob blob-1" />
+      <div className="blob blob-2" />
+      <div className="blob blob-3" />
+      
+      <div className="container" style={{ maxWidth: "800px" }}>
+        <header className="header">
+           <div className="header-icon">🏅</div>
+           <h1 className="header-title">Papan Peringkat</h1>
+           <p className="header-subtitle">Status Pembayaran Uang Kas Kelas Real-Time</p>
+        </header>
+        {fetchingList && <p style={{textAlign:"center", color: "#63b3ed"}}>Mensinkronkan Data...</p>}
+        {renderLeaderboard(true)}
       </div>
     </div>
   );
