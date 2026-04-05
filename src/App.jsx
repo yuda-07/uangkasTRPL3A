@@ -217,12 +217,6 @@ export default function App() {
           );
         })}
       </div>
-      
-      {isFullscreen && (
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <a href="#/" className="btn" style={{display: "inline-block", width: "auto"}}>🏠 Kembali ke Bendahara</a>
-        </div>
-      )}
     </div>
   );
 
@@ -234,7 +228,7 @@ export default function App() {
         <div className="blob blob-2" />
         <div className="blob blob-3" />
         
-        <div className="container" style={{ maxWidth: "800px" }}>
+        <div className="container" style={{ maxWidth: "800px" }}>``
           <header className="header">
              <div className="header-icon">🏅</div>
              <h1 className="header-title">Papan Peringkat</h1>
