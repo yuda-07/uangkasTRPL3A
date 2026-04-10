@@ -61,9 +61,9 @@ function doPost(e) {
 // FETCH DATA LOGIC 
 // =====================================================
 function handleGetData(sheets) {
-  const pSheets = getPeriodeSheetsObj(sheets); // Format: { 1: SheetObj, 2: SheetObj }
+  const pSheets = getPeriodeSheetsObj(sheets);
   const paidData = {}; 
-  // Struktur paidData: { 1: { "NamaA": [1,2], "NamaB": [1] }, 2: ... }
+  let grandTotal = 0;
 
   for (const pNum in pSheets) {
     const sheet = pSheets[pNum];
@@ -76,19 +76,28 @@ function handleGetData(sheets) {
          if (!nama) continue;
          
          const curPaid = [];
-         if (parseFloat(data[i][2]) > 0) curPaid.push(1);
-         if (parseFloat(data[i][3]) > 0) curPaid.push(2);
-         if (parseFloat(data[i][4]) > 0) curPaid.push(3);
-         if (parseFloat(data[i][5]) > 0) curPaid.push(4);
+         const m1 = parseFloat(data[i][2]) || 0;
+         const m2 = parseFloat(data[i][3]) || 0;
+         const m3 = parseFloat(data[i][4]) || 0;
+         const m4 = parseFloat(data[i][5]) || 0;
+
+         if (m1 > 0) curPaid.push(1);
+         if (m2 > 0) curPaid.push(2);
+         if (m3 > 0) curPaid.push(3);
+         if (m4 > 0) curPaid.push(4);
          
          paidData[pNum][nama] = curPaid;
+
+         // Hitung dari tiap kolom minggu (bukan kolom G)
+         grandTotal += m1 + m2 + m3 + m4;
       }
     }
   }
 
   return buildResponse({
     status: "success",
-    paidData: paidData
+    paidData: paidData,
+    totalCash: grandTotal
   });
 }
 

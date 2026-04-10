@@ -31,6 +31,7 @@ export default function App() {
   const [paidData, setPaidData] = useState({}); 
   const [studentActivePeriod, setStudentActivePeriod] = useState({}); 
   const [leaderboard, setLeaderboard] = useState([]); 
+  const [totalCash,   setTotalCash]    = useState(0); 
   
   const [notification, setNotification] = useState(null);
 
@@ -54,6 +55,7 @@ export default function App() {
         if (data.status === "success") {
           const rawPaidData = data.paidData || {};
           setPaidData(rawPaidData);
+          setTotalCash(data.totalCash || 0);
           recalculateDataIntegrity(rawPaidData);
         }
       })
@@ -158,6 +160,7 @@ export default function App() {
       newPaidData[periode][nama].push(Number(minggu));
       
       setPaidData(newPaidData);
+      setTotalCash(prev => prev + Number(jumlah));
       recalculateDataIntegrity(newPaidData);
 
       setNama("");
@@ -412,7 +415,21 @@ export default function App() {
            <h1 className="header-title">Papan Peringkat</h1>
            <p className="header-subtitle">Status Pembayaran Uang Kas Kelas Real-Time</p>
         </header>
-        {fetchingList && <p style={{textAlign:"center", color: "#63b3ed"}}>Mensinkronkan Data...</p>}
+        {fetchingList && <p style={{textAlign:"center", color: "#63b3ed", marginBottom: "1rem"}}>Mensinkronkan Data...</p>}
+
+        {/* --- TOTAL CASH CARD (NEW) --- */}
+        {!fetchingList && (
+          <div className="total-cash-card">
+            <div className="total-cash-info">
+              <span className="total-cash-label">Total Uang Kas Terkumpul</span>
+              <span className="total-cash-amount">
+                Rp {totalCash.toLocaleString("id-ID")}
+              </span>
+            </div>
+            <div className="total-cash-icon">💰</div>
+          </div>
+        )}
+
         {renderLeaderboard(true)}
       </div>
     </div>
