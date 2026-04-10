@@ -55,8 +55,15 @@ export default function App() {
         if (data.status === "success") {
           const rawPaidData = data.paidData || {};
           setPaidData(rawPaidData);
-          setTotalCash(data.totalCash || 0);
           recalculateDataIntegrity(rawPaidData);
+
+          // Hitung total dari cashData (per-siswa per-periode) untuk akurasi penuh
+          const rawCashData = data.cashData || {};
+          const computedTotal = Object.values(rawCashData)
+            .flatMap(periodStudents => Object.values(periodStudents))
+            .reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+          // Fallback ke totalCash dari backend jika cashData kosong
+          setTotalCash(computedTotal > 0 ? computedTotal : (data.totalCash || 0));
         }
       })
       .catch(() => {

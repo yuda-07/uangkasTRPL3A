@@ -63,11 +63,13 @@ function doPost(e) {
 function handleGetData(sheets) {
   const pSheets = getPeriodeSheetsObj(sheets);
   const paidData = {}; 
-  let grandTotal = 0;
+  const cashData  = {}; // { "1": { "Rino": 20000 } }
+  let grandTotal  = 0;
 
   for (const pNum in pSheets) {
     const sheet = pSheets[pNum];
     paidData[pNum] = {};
+    cashData[pNum]  = {};
     
     if (sheet.getLastRow() > 1) {
       const data = sheet.getDataRange().getValues();
@@ -75,12 +77,12 @@ function handleGetData(sheets) {
          const nama = data[i][1] ? data[i][1].toString().trim() : "";
          if (!nama) continue;
          
-         const curPaid = [];
          const m1 = parseFloat(data[i][2]) || 0;
          const m2 = parseFloat(data[i][3]) || 0;
          const m3 = parseFloat(data[i][4]) || 0;
          const m4 = parseFloat(data[i][5]) || 0;
 
+         const curPaid = [];
          if (m1 > 0) curPaid.push(1);
          if (m2 > 0) curPaid.push(2);
          if (m3 > 0) curPaid.push(3);
@@ -88,8 +90,9 @@ function handleGetData(sheets) {
          
          paidData[pNum][nama] = curPaid;
 
-         // Hitung dari tiap kolom minggu (bukan kolom G)
-         grandTotal += m1 + m2 + m3 + m4;
+         const studentTotal = m1 + m2 + m3 + m4;
+         if (studentTotal > 0) cashData[pNum][nama] = studentTotal;
+         grandTotal += studentTotal;
       }
     }
   }
@@ -97,6 +100,7 @@ function handleGetData(sheets) {
   return buildResponse({
     status: "success",
     paidData: paidData,
+    cashData: cashData,
     totalCash: grandTotal
   });
 }
