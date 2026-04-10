@@ -57,13 +57,28 @@ export default function App() {
           setPaidData(rawPaidData);
           recalculateDataIntegrity(rawPaidData);
 
-          // Hitung total dari cashData (per-siswa per-periode) untuk akurasi penuh
+          // Coba hitung dari cashData (GAS baru)
           const rawCashData = data.cashData || {};
           const computedTotal = Object.values(rawCashData)
             .flatMap(periodStudents => Object.values(periodStudents))
             .reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
-          // Fallback ke totalCash dari backend jika cashData kosong
-          setTotalCash(computedTotal > 0 ? computedTotal : (data.totalCash || 0));
+
+          if (computedTotal > 0) {
+            setTotalCash(computedTotal);
+          } else if ((data.totalCash || 0) > 0) {
+            setTotalCash(data.totalCash);
+          } else {
+            // Fallback: Hitung dari jumlah minggu yang terbayar × Rp5.000
+            // (kompatibel dengan GAS versi lama yang belum ter-update)
+            let estimasi = 0;
+            for (const p in rawPaidData) {
+              for (const n in rawPaidData[p]) {
+                const weeks = rawPaidData[p][n] || [];
+                estimasi += weeks.length * 5000;
+              }
+            }
+            setTotalCash(estimasi);
+          }
         }
       })
       .catch(() => {
