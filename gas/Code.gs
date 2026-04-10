@@ -71,11 +71,12 @@ function handleGetData(sheets) {
     paidData[pNum] = {};
     cashData[pNum]  = {};
     
-    if (sheet.getLastRow() > 1) {
+    if (sheet.getLastRow() > 0) {
       const data = sheet.getDataRange().getValues();
-      for (let i = 1; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
          const nama = data[i][1] ? data[i][1].toString().trim() : "";
-         if (!nama) continue;
+         // Skip baris kosong atau baris header ("Nama")
+         if (!nama || nama.toLowerCase() === "nama") continue;
          
          const m1 = parseFloat(data[i][2]) || 0;
          const m2 = parseFloat(data[i][3]) || 0;
