@@ -198,6 +198,18 @@ export default function App() {
 
       setNama("");
       setJumlah("");
+      
+      // Refresh data dari server agar sinkron
+      const paramsRefresh = new URLSearchParams({ action: "getData" });
+      const r = await fetch(`${GAS_URL}?${paramsRefresh}`);
+      const d = await r.json();
+      if (d.status === "success") {
+        setPaidData(d.paidData || {});
+        setTotalCash(d.totalCash || 0);
+        setExpenses(d.expenses || []);
+        setTotalExpense(d.totalExpense || 0);
+        recalculateDataIntegrity(d.paidData || {});
+      }
     } catch {
       showNotification("error", "❌ Gagal mengirim data. Periksa koneksi internet.");
     } finally {
@@ -224,6 +236,15 @@ export default function App() {
 
       setExpKeterangan("");
       setExpJumlah("");
+
+      // Refresh data dari server agar sinkron
+      const paramsRefresh = new URLSearchParams({ action: "getData" });
+      const r = await fetch(`${GAS_URL}?${paramsRefresh}`);
+      const d = await r.json();
+      if (d.status === "success") {
+        setExpenses(d.expenses || []);
+        setTotalExpense(d.totalExpense || 0);
+      }
     } catch {
       showNotification("error", "❌ Gagal mencatat pengeluaran.");
     } finally {
@@ -233,6 +254,42 @@ export default function App() {
 
   const isPeriodCleared = periode && minggu && !fetchingList && DAFTAR_NAMA.filter(n => studentActivePeriod[n] === Number(periode)).length === 0;
   const isWeekPaid      = periode && minggu && !fetchingList && !isPeriodCleared && siswaList.length === 0;
+  
+  // Render Ringkasan Saldo (Kartu Dashboard)
+  const renderDashboardCards = () => (
+    <div className="dashboard-grid">
+      <div className="total-cash-card" style={{margin: 0}}>
+        <div className="total-cash-info">
+          <span className="total-cash-label">Total Uang Masuk</span>
+          <span className="total-cash-amount">
+            Rp {(totalCash + SALDO_AWAL).toLocaleString("id-ID")}
+          </span>
+          <span style={{fontSize: "0.7em", opacity: 0.7}}>+ Saldo Awal Rp 130rb</span>
+        </div>
+        <div className="total-cash-icon">💰</div>
+      </div>
+
+      <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #742a2a 0%, #c53030 100%)"}}>
+        <div className="total-cash-info">
+          <span className="total-cash-label">Total Pengeluaran</span>
+          <span className="total-cash-amount">
+            Rp {totalExpense.toLocaleString("id-ID")}
+          </span>
+        </div>
+        <div className="total-cash-icon">📤</div>
+      </div>
+
+      <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #276749 0%, #48bb78 100%)"}}>
+        <div className="total-cash-info">
+          <span className="total-cash-label">Sisa Saldo</span>
+          <span className="total-cash-amount">
+            Rp {(totalCash + SALDO_AWAL - totalExpense).toLocaleString("id-ID")}
+          </span>
+        </div>
+        <div className="total-cash-icon">💎</div>
+      </div>
+    </div>
+  );
 
   // Render Papan Klasemen
   const renderLeaderboard = (isFullscreen = false) => (
@@ -508,8 +565,9 @@ export default function App() {
         </div>
         </div> {/* End Kiri */}
 
-        {/* KANAN: Klasemen (Mini Version) */}
+        {/* KANAN: Dashboard & Klasemen */}
         <div className="right-pane">
+           {!fetchingList && renderDashboardCards()}
            {renderLeaderboard()}
         </div> {/* End Kanan */}
         </div> {/* End Main Content */}
@@ -535,40 +593,7 @@ export default function App() {
         {fetchingList && <p style={{textAlign:"center", color: "#63b3ed", marginBottom: "1rem"}}>Mensinkronkan Data...</p>}
 
         {/* --- TOTAL CASH CARD (ENHANCED) --- */}
-        {!fetchingList && (
-          <div className="dashboard-grid" style={{display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem"}}>
-            <div className="total-cash-card" style={{margin: 0}}>
-              <div className="total-cash-info">
-                <span className="total-cash-label">Total Uang Masuk</span>
-                <span className="total-cash-amount">
-                  Rp {(totalCash + SALDO_AWAL).toLocaleString("id-ID")}
-                </span>
-                <span style={{fontSize: "0.7em", opacity: 0.7}}>+ Saldo Awal Rp 130rb</span>
-              </div>
-              <div className="total-cash-icon">💰</div>
-            </div>
-
-            <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #742a2a 0%, #c53030 100%)"}}>
-              <div className="total-cash-info">
-                <span className="total-cash-label">Total Pengeluaran</span>
-                <span className="total-cash-amount">
-                  Rp {totalExpense.toLocaleString("id-ID")}
-                </span>
-              </div>
-              <div className="total-cash-icon">📤</div>
-            </div>
-
-            <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #276749 0%, #48bb78 100%)"}}>
-              <div className="total-cash-info">
-                <span className="total-cash-label">Sisa Saldo Saat Ini</span>
-                <span className="total-cash-amount">
-                  Rp {(totalCash + SALDO_AWAL - totalExpense).toLocaleString("id-ID")}
-                </span>
-              </div>
-              <div className="total-cash-icon">💎</div>
-            </div>
-          </div>
-        )}
+        {!fetchingList && renderDashboardCards()}
 
         {/* --- DAFTAR PENGELUARAN --- */}
         {!fetchingList && expenses.length > 0 && (
