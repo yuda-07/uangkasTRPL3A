@@ -449,7 +449,13 @@ export default function App() {
                     id="nama"
                     className="input select"
                     value={nama}
-                    onChange={(e) => setNama(e.target.value)}
+                    onChange={(e) => {
+                      const selectedNama = e.target.value;
+                      setNama(selectedNama);
+                      if (selectedNama) {
+                        setJumlah("5000"); // Otomatis isi 5000 saat nama dipilih
+                      }
+                    }}
                     disabled={loading || fetchingList || siswaList.length === 0}
                   >
                     <option value="">
