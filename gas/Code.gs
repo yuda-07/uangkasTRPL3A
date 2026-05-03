@@ -2,10 +2,23 @@
   // GOOGLE APPS SCRIPT — BACKEND KAS KELAS v5 (EXPLICIT PERIODS)
   // =====================================================
 
+  // JIKA SCRIPT ADALAH STANDALONE, MASUKKAN ID SPREADSHEET DI SINI
+  // JIKA BOUND SCRIPT (DIBUAT DARI SHEET), BIARKAN KOSONG ""
+  const SPREADSHEET_ID = ""; 
+
+  function getSS() {
+    if (SPREADSHEET_ID) {
+      return SpreadsheetApp.openById(SPREADSHEET_ID);
+    }
+    return SpreadsheetApp.getActiveSpreadsheet();
+  }
+
   function doGet(e) {
     try {
       const params = e.parameter;
-      const ss     = SpreadsheetApp.getActiveSpreadsheet();
+      const ss     = getSS();
+      if (!ss) throw new Error("Spreadsheet tidak ditemukan! Pastikan ID benar atau script dibuat dari Extensions > Apps Script.");
+      
       const sheets = ss.getSheets();
       
       // ==========================================
