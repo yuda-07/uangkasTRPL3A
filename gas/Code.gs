@@ -9,8 +9,7 @@
       const sheets = ss.getSheets();
       
       // ==========================================
-      // ACTION: GET DATA
-      // Mengembalikan data pembayaran per-periode
+      // ROUTING ACTIONS
       // ==========================================
       if (params.action === "getData") {
         return handleGetData(ss, sheets);
@@ -19,38 +18,9 @@
       if (params.action === "addExpense") {
         return handleAddExpense(ss, params);
       }
-
-      // ==========================================
-      // ACTION: SIMPAN DATA
-      // ==========================================
-      const nama   = (params.nama || "").trim();
-      const minggu = parseInt(params.minggu);
-      const jumlah = parseFloat(params.jumlah);
-      const periode = parseInt(params.periode); // Ex: 1, 2, 3..
-
-      if (!nama || isNaN(minggu) || isNaN(jumlah) || isNaN(periode)) {
-        return buildResponse({ status: "error", message: "Parameter tidak lengkap" });
-      }
-
-      // Cari atau buat Sheet berdasarkan Periode (Sesuai order Frontend)
-      const sheetName = "Periode " + periode;
-      let targetSheet = ss.getSheetByName(sheetName);
-
-      if (!targetSheet) {
-          targetSheet = ss.insertSheet(sheetName);
-          setupMinimalistSheet(targetSheet);
-      } else if (targetSheet.getLastRow() === 0) {
-          setupMinimalistSheet(targetSheet);
-      }
-
-      // Simpan ke sheet tujuan
-      writeRow(targetSheet, nama, 2 + minggu, jumlah);
-
-      return buildResponse({
-        status : "success",
-        message: "Data berhasil disimpan",
-        sheet  : targetSheet.getName(),
-      });
+      
+      // Default action is addPayment
+      return handleAddPayment(ss, params);
 
     } catch (err) {
       return buildResponse({ status: "error", message: err.toString() });
@@ -168,6 +138,49 @@
     return buildResponse({
       status: "success",
       message: "Pengeluaran berhasil dicatat"
+    });
+  }
+
+  // =====================================================
+  // PAYMENT LOGIC
+  // =====================================================
+  function handleAddPayment(ss, params) {
+    const nama   = (params.nama || "").trim();
+    const minggu = parseInt(params.minggu);
+    const jumlah = parseFloat(params.jumlah);
+    const periode = parseInt(params.periode);
+    
+    if (!nama || isNaN(minggu) || isNaN(jumlah) || isNaN(periode)) {
+      return buildResponse({ status: "error", message: "Parameter tidak lengkap" });
+    }
+
+    const sheetName = "Periode " + periode;
+    let targetSheet = ss.getSheetByName(sheetName);
+    
+    if (!targetSheet) {
+      return buildResponse({ status: "error", message: "Sheet " + sheetName + " tidak ditemukan" });
+    }
+
+    const data = targetSheet.getDataRange().getValues();
+    let rowIndex = -1;
+    
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][1] && data[i][1].toString().trim() === nama) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      return buildResponse({ status: "error", message: "Nama " + nama + " tidak ditemukan di " + sheetName });
+    }
+
+    const colIndex = minggu + 2; 
+    targetSheet.getRange(rowIndex, colIndex).setValue(jumlah);
+
+    return buildResponse({
+      status: "success",
+      message: "Data " + nama + " M" + minggu + " berhasil disimpan ke " + sheetName
     });
   }
 
