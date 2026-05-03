@@ -236,17 +236,8 @@ export default function App() {
       setNama("");
       setJumlah("");
       
-      // Refresh data dari server agar sinkron
-      const paramsRefresh = new URLSearchParams({ action: "getData" });
-      const r = await fetch(`${GAS_URL}?${paramsRefresh}`);
-      const d = await r.json();
-      if (d.status === "success") {
-        setPaidData(d.paidData || {});
-        setTotalCash(d.totalCash || 0);
-        setExpenses(d.expenses || []);
-        setTotalExpense(d.totalExpense || 0);
-        recalculateDataIntegrity(d.paidData || {});
-      }
+      // Beri notifikasi tambahan bahwa sinkronisasi di latar belakang akan memakan waktu
+      console.log("Data tersimpan secara lokal. Sinkronisasi server sedang berjalan...");
     } catch {
       showNotification("error", "❌ Gagal mengirim data. Periksa koneksi internet.");
     } finally {
@@ -283,15 +274,8 @@ export default function App() {
 
       setExpKeterangan("");
       setExpJumlah("");
-
-      // Refresh data dari server agar sinkron
-      const paramsRefresh = new URLSearchParams({ action: "getData" });
-      const r = await fetch(`${GAS_URL}?${paramsRefresh}`);
-      const d = await r.json();
-      if (d.status === "success") {
-        setExpenses(d.expenses || []);
-        setTotalExpense(d.totalExpense || 0);
-      }
+      
+      console.log("Pengeluaran tersimpan secara lokal.");
     } catch {
       showNotification("error", "❌ Gagal mencatat pengeluaran.");
     } finally {
