@@ -13,7 +13,11 @@
       // Mengembalikan data pembayaran per-periode
       // ==========================================
       if (params.action === "getData") {
-        return handleGetData(sheets);
+        return handleGetData(ss, sheets);
+      }
+
+      if (params.action === "addExpense") {
+        return handleAddExpense(ss, params);
       }
 
       // ==========================================
@@ -60,12 +64,13 @@
   // =====================================================
   // FETCH DATA LOGIC 
   // =====================================================
-  function handleGetData(sheets) {
+  function handleGetData(ss, sheets) {
     const pSheets = getPeriodeSheetsObj(sheets);
     const paidData = {}; 
     const cashData  = {}; // { "1": { "Rino": 20000 } }
     let grandTotal  = 0;
 
+    // --- Ambil Data Pembayaran ---
     for (const pNum in pSheets) {
       const sheet = pSheets[pNum];
       paidData[pNum] = {};
@@ -105,11 +110,60 @@
       }
     }
 
+    // --- Ambil Data Pengeluaran ---
+    const expenseSheet = ss.getSheetByName("Pengeluaran");
+    const expenses = [];
+    let totalExpense = 0;
+    if (expenseSheet && expenseSheet.getLastRow() > 1) {
+      const expData = expenseSheet.getRange(2, 1, expenseSheet.getLastRow() - 1, 3).getValues();
+      expData.forEach(row => {
+        const date = row[0];
+        const desc = row[1];
+        const amount = parseFloat(row[2]) || 0;
+        expenses.push({ date, desc, amount });
+        totalExpense += amount;
+      });
+    }
+
     return buildResponse({
       status: "success",
       paidData: paidData,
       cashData: cashData,
-      totalCash: grandTotal
+      totalCash: grandTotal,
+      expenses: expenses,
+      totalExpense: totalExpense
+    });
+  }
+
+  // =====================================================
+  // EXPENSE LOGIC
+  // =====================================================
+  function handleAddExpense(ss, params) {
+    const desc = (params.keterangan || "").trim();
+    const amount = parseFloat(params.jumlah);
+
+    if (!desc || isNaN(amount)) {
+      return buildResponse({ status: "error", message: "Keterangan dan jumlah harus diisi" });
+    }
+
+    let sheet = ss.getSheetByName("Pengeluaran");
+    if (!sheet) {
+      sheet = ss.insertSheet("Pengeluaran");
+      sheet.appendRow(["Tanggal", "Keterangan", "Jumlah"]);
+      const headerRange = sheet.getRange(1, 1, 1, 3);
+      headerRange.setBackground("#990000").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
+      sheet.setColumnWidth(1, 150);
+      sheet.setColumnWidth(2, 300);
+      sheet.setColumnWidth(3, 150);
+    }
+
+    const date = new Date();
+    sheet.appendRow([date, desc, amount]);
+    sheet.getRange(sheet.getLastRow(), 3).setNumberFormat('"Rp"#,##0');
+
+    return buildResponse({
+      status: "success",
+      message: "Pengeluaran berhasil dicatat"
     });
   }
 

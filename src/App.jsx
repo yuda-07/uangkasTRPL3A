@@ -5,6 +5,7 @@ import "./App.css";
 // GANTI URL INI DENGAN URL GOOGLE APPS SCRIPT ANDA SETELAH DEPLOY
 // ============================================================
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzo6LlO1zz0oY2JPtoxPF8JENk70LkN264UXCeoAkteIyVD3_M56Zi7tyVHwhYCPr74HQ/exec";
+const SALDO_AWAL = 130000;
 
 const DAFTAR_NAMA = [
   "Muhammad Ilham", "Abi Bakri", "Ahmad Hafidz Fiqhy", "Bintang Aidil Rizky",
@@ -33,6 +34,13 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState([]); 
   const [totalCash,   setTotalCash]    = useState(0); 
   
+  const [expenses,     setExpenses]     = useState([]);
+  const [totalExpense, setTotalExpense] = useState(0);
+  
+  const [isExpenseMode, setIsExpenseMode] = useState(false);
+  const [expKeterangan, setExpKeterangan] = useState("");
+  const [expJumlah,     setExpJumlah]     = useState("");
+
   const [notification, setNotification] = useState(null);
 
   // Router Listener
@@ -52,34 +60,35 @@ export default function App() {
       .then(r => r.json())
       .then(data => {
         if (cancelled) return;
-        if (data.status === "success") {
-          const rawPaidData = data.paidData || {};
-          setPaidData(rawPaidData);
-          recalculateDataIntegrity(rawPaidData);
+          if (data.status === "success") {
+            const rawPaidData = data.paidData || {};
+            setPaidData(rawPaidData);
+            recalculateDataIntegrity(rawPaidData);
 
-          // Coba hitung dari cashData (GAS baru)
-          const rawCashData = data.cashData || {};
-          const computedTotal = Object.values(rawCashData)
-            .flatMap(periodStudents => Object.values(periodStudents))
-            .reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+            setExpenses(data.expenses || []);
+            setTotalExpense(data.totalExpense || 0);
 
-          if (computedTotal > 0) {
-            setTotalCash(computedTotal);
-          } else if ((data.totalCash || 0) > 0) {
-            setTotalCash(data.totalCash);
-          } else {
-            // Fallback: Hitung dari jumlah minggu yang terbayar × Rp5.000
-            // (kompatibel dengan GAS versi lama yang belum ter-update)
-            let estimasi = 0;
-            for (const p in rawPaidData) {
-              for (const n in rawPaidData[p]) {
-                const weeks = rawPaidData[p][n] || [];
-                estimasi += weeks.length * 5000;
+            // Coba hitung dari cashData (GAS baru)
+            const rawCashData = data.cashData || {};
+            const computedTotal = Object.values(rawCashData)
+              .flatMap(periodStudents => Object.values(periodStudents))
+              .reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+
+            if (computedTotal > 0) {
+              setTotalCash(computedTotal);
+            } else if ((data.totalCash || 0) > 0) {
+              setTotalCash(data.totalCash);
+            } else {
+              let estimasi = 0;
+              for (const p in rawPaidData) {
+                for (const n in rawPaidData[p]) {
+                  const weeks = rawPaidData[p][n] || [];
+                  estimasi += weeks.length * 5000;
+                }
               }
+              setTotalCash(estimasi);
             }
-            setTotalCash(estimasi);
           }
-        }
       })
       .catch(() => {
         if (!cancelled) showNotification("error", "❌ Gagal memuat sinkronisasi data dari spreadsheet.");
@@ -150,7 +159,9 @@ export default function App() {
     const eligibleStudents = DAFTAR_NAMA.filter(n => studentActivePeriod[n] === periNum);
     siswaList = eligibleStudents.filter(n => {
        const alreadyPaidWeeks = (paidData[periNum] && paidData[periNum][n]) || [];
-       return !alreadyPaidWeeks.includes(mnguNum);
+       // FIX: Harus urut. Hanya muncul jika mnguNum adalah minggu berikutnya
+       const nextWeek = alreadyPaidWeeks.length + 1;
+       return mnguNum === nextWeek;
     });
   }
 
@@ -172,7 +183,7 @@ export default function App() {
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({ nama: nama.trim(), periode, minggu, jumlah });
+      const params = new URLSearchParams({ action: "addPayment", nama: nama.trim(), periode, minggu, jumlah });
       await fetch(`${GAS_URL}?${params}`, { method: "GET", mode: "no-cors" });
 
       showNotification("success", `✅ Pembayaran ${nama} (P${periode}-M${minggu}) Rp ${Number(jumlah).toLocaleString("id-ID")} tersimpan!`);
@@ -189,6 +200,32 @@ export default function App() {
       setJumlah("");
     } catch {
       showNotification("error", "❌ Gagal mengirim data. Periksa koneksi internet.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExpenseSubmit = async (e) => {
+    e.preventDefault();
+    if (!expKeterangan || !expJumlah || Number(expJumlah) <= 0) {
+      showNotification("error", "❌ Harap lengkapi formulir pengeluaran!");
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const params = new URLSearchParams({ action: "addExpense", keterangan: expKeterangan, jumlah: expJumlah });
+      await fetch(`${GAS_URL}?${params}`, { method: "GET", mode: "no-cors" });
+
+      showNotification("success", `✅ Pengeluaran "${expKeterangan}" sebesar Rp ${Number(expJumlah).toLocaleString("id-ID")} tersimpan!`);
+      
+      setExpenses(prev => [{ date: new Date(), desc: expKeterangan, amount: Number(expJumlah) }, ...prev]);
+      setTotalExpense(prev => prev + Number(expJumlah));
+
+      setExpKeterangan("");
+      setExpJumlah("");
+    } catch {
+      showNotification("error", "❌ Gagal mencatat pengeluaran.");
     } finally {
       setLoading(false);
     }
@@ -273,8 +310,24 @@ export default function App() {
           {/* KIRI: Form & Info */}
           <div className="left-pane">
             <div className="card">
-              <h2 className="card-title">Form Pembayaran</h2>
+              <div className="card-tabs" style={{display: "flex", gap: "10px", marginBottom: "1.5rem"}}>
+                <button 
+                  className={`tab-btn ${!isExpenseMode ? "active" : ""}`}
+                  onClick={() => setIsExpenseMode(false)}
+                >
+                  📥 Pemasukan (Kas)
+                </button>
+                <button 
+                  className={`tab-btn ${isExpenseMode ? "active" : ""}`}
+                  onClick={() => setIsExpenseMode(true)}
+                >
+                  📤 Pengeluaran
+                </button>
+              </div>
 
+              {!isExpenseMode ? (
+                <>
+              <h2 className="card-title">Form Pembayaran</h2>
           <form onSubmit={handleSubmit} className="form">
 
             {/* ── STEP 1: Pilih Periode ── */}
@@ -399,8 +452,50 @@ export default function App() {
                 )}
               </button>
             )}
-
           </form>
+          </>
+          ) : (
+            <>
+            <h2 className="card-title">Form Pengeluaran</h2>
+            <form onSubmit={handleExpenseSubmit} className="form">
+               <div className="field">
+                <label htmlFor="expKet" className="label">Keterangan Pengeluaran</label>
+                <input
+                  id="expKet"
+                  className="input"
+                  placeholder="Misal: Beli sapu, fotocopy, dll"
+                  value={expKeterangan}
+                  onChange={(e) => setExpKeterangan(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="expJml" className="label">Jumlah (Rp)</label>
+                <div className="input-wrapper">
+                  <span className="prefix">Rp</span>
+                  <input
+                    id="expJml"
+                    type="number"
+                    className="input input--prefixed"
+                    placeholder="0"
+                    value={expJumlah}
+                    onChange={(e) => setExpJumlah(e.target.value)}
+                    min="1"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className={`btn btn--expense ${loading ? "btn--loading" : ""}`}
+                style={{background: "#e53e3e"}}
+                disabled={loading || !expKeterangan || !expJumlah}
+              >
+                {loading ? "Memproses..." : "📤 Catat Pengeluaran"}
+              </button>
+            </form>
+            </>
+          )}
         </div>
 
         {/* Info Card */}
@@ -439,17 +534,60 @@ export default function App() {
         </header>
         {fetchingList && <p style={{textAlign:"center", color: "#63b3ed", marginBottom: "1rem"}}>Mensinkronkan Data...</p>}
 
-        {/* --- TOTAL CASH CARD (NEW) --- */}
+        {/* --- TOTAL CASH CARD (ENHANCED) --- */}
         {!fetchingList && (
-          <div className="total-cash-card">
-            <div className="total-cash-info">
-              <span className="total-cash-label">Total Uang Kas Terkumpul</span>
-              <span className="total-cash-amount">
-                Rp {totalCash.toLocaleString("id-ID")}
-              </span>
+          <div className="dashboard-grid" style={{display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem"}}>
+            <div className="total-cash-card" style={{margin: 0}}>
+              <div className="total-cash-info">
+                <span className="total-cash-label">Total Uang Masuk</span>
+                <span className="total-cash-amount">
+                  Rp {(totalCash + SALDO_AWAL).toLocaleString("id-ID")}
+                </span>
+                <span style={{fontSize: "0.7em", opacity: 0.7}}>+ Saldo Awal Rp 130rb</span>
+              </div>
+              <div className="total-cash-icon">💰</div>
             </div>
-            <div className="total-cash-icon">💰</div>
+
+            <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #742a2a 0%, #c53030 100%)"}}>
+              <div className="total-cash-info">
+                <span className="total-cash-label">Total Pengeluaran</span>
+                <span className="total-cash-amount">
+                  Rp {totalExpense.toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="total-cash-icon">📤</div>
+            </div>
+
+            <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #276749 0%, #48bb78 100%)"}}>
+              <div className="total-cash-info">
+                <span className="total-cash-label">Sisa Saldo Saat Ini</span>
+                <span className="total-cash-amount">
+                  Rp {(totalCash + SALDO_AWAL - totalExpense).toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="total-cash-icon">💎</div>
+            </div>
           </div>
+        )}
+
+        {/* --- DAFTAR PENGELUARAN --- */}
+        {!fetchingList && expenses.length > 0 && (
+           <div className="card" style={{marginBottom: "1.5rem"}}>
+              <h2 className="card-title" style={{fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "8px"}}>
+                📋 Riwayat Pengeluaran
+              </h2>
+              <div style={{maxHeight: "200px", overflowY: "auto"}}>
+                {expenses.map((exp, i) => (
+                  <div key={i} style={{display: "flex", justifyContent: "space-between", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
+                    <div>
+                      <div style={{fontWeight: "bold"}}>{exp.desc}</div>
+                      <div style={{fontSize: "0.8em", opacity: 0.6}}>{new Date(exp.date).toLocaleDateString("id-ID")}</div>
+                    </div>
+                    <div style={{color: "#feb2b2", fontWeight: "bold"}}>- Rp {Number(exp.amount).toLocaleString("id-ID")}</div>
+                  </div>
+                ))}
+              </div>
+           </div>
         )}
 
         {renderLeaderboard(true)}

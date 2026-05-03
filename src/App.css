@@ -452,6 +452,15 @@ body {
   background: linear-gradient(135deg, #374785, #5b3f8c);
 }
 
+.btn--expense {
+  background: linear-gradient(135deg, #c53030, #9b2c2c);
+  box-shadow: 0 4px 20px rgba(197, 48, 48, 0.35);
+}
+
+.btn--expense:hover:not(:disabled) {
+  box-shadow: 0 8px 28px rgba(197, 48, 48, 0.5);
+}
+
 /* Spinner */
 .spinner {
   width: 18px;
@@ -628,4 +637,54 @@ ol.info-list li::before {
   .total-cash-icon {
     font-size: 2rem;
   }
+}
+
+/* =============================================
+   DASHBOARD GRID & TABS
+   ============================================= */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 700;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(99, 179, 237, 0.3);
+}
+
+.tab-btn:hover:not(.active) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* Custom Scrollbar for Riwayat */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
