@@ -49,6 +49,42 @@ export default function App() {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+  
+  // Render Ringkasan Saldo (Kartu Dashboard)
+  const renderDashboardCards = () => (
+    <div className="dashboard-grid">
+      <div className="total-cash-card" style={{margin: 0}}>
+        <div className="total-cash-info">
+          <span className="total-cash-label">Total Uang Masuk</span>
+          <span className="total-cash-amount">
+            Rp {(totalCash + SALDO_AWAL).toLocaleString("id-ID")}
+          </span>
+          <span style={{fontSize: "0.7em", opacity: 0.7}}>+ Saldo Awal Rp 130rb</span>
+        </div>
+        <div className="total-cash-icon">💰</div>
+      </div>
+
+      <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #742a2a 0%, #c53030 100%)"}}>
+        <div className="total-cash-info">
+          <span className="total-cash-label">Total Pengeluaran</span>
+          <span className="total-cash-amount">
+            Rp {totalExpense.toLocaleString("id-ID")}
+          </span>
+        </div>
+        <div className="total-cash-icon">📤</div>
+      </div>
+
+      <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #276749 0%, #48bb78 100%)"}}>
+        <div className="total-cash-info">
+          <span className="total-cash-label">Sisa Saldo</span>
+          <span className="total-cash-amount">
+            Rp {(totalCash + SALDO_AWAL - totalExpense).toLocaleString("id-ID")}
+          </span>
+        </div>
+        <div className="total-cash-icon">💎</div>
+      </div>
+    </div>
+  );
 
   // ── 1. AMBIL DATA DARI GOOGLE SHEETS ──
   useEffect(() => {
@@ -59,6 +95,7 @@ export default function App() {
     fetch(`${GAS_URL}?${params}`)
       .then(r => r.json())
       .then(data => {
+        console.log("Data dari Google Sheets:", data);
         if (cancelled) return;
           if (data.status === "success") {
             const rawPaidData = data.paidData || {};
@@ -255,39 +292,6 @@ export default function App() {
   const isPeriodCleared = periode && minggu && !fetchingList && DAFTAR_NAMA.filter(n => studentActivePeriod[n] === Number(periode)).length === 0;
   const isWeekPaid      = periode && minggu && !fetchingList && !isPeriodCleared && siswaList.length === 0;
   
-  // Render Ringkasan Saldo (Kartu Dashboard)
-  const renderDashboardCards = () => (
-    <div className="dashboard-grid">
-      <div className="total-cash-card" style={{margin: 0}}>
-        <div className="total-cash-info">
-          <span className="total-cash-label">Total Uang Masuk</span>
-          <span className="total-cash-amount">
-            Rp {(totalCash + SALDO_AWAL).toLocaleString("id-ID")}
-          </span>
-          <span style={{fontSize: "0.7em", opacity: 0.7}}>+ Saldo Awal Rp 130rb</span>
-        </div>
-        <div className="total-cash-icon">💰</div>
-      </div>
-
-      <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #742a2a 0%, #c53030 100%)"}}>
-        <div className="total-cash-info">
-          <span className="total-cash-label">Total Pengeluaran</span>
-          <span className="total-cash-amount">
-            Rp {totalExpense.toLocaleString("id-ID")}
-          </span>
-        </div>
-        <div className="total-cash-icon">📤</div>
-      </div>
-
-      <div className="total-cash-card" style={{margin: 0, background: "linear-gradient(135deg, #276749 0%, #48bb78 100%)"}}>
-        <div className="total-cash-info">
-          <span className="total-cash-label">Sisa Saldo</span>
-          <span className="total-cash-amount">
-            Rp {(totalCash + SALDO_AWAL - totalExpense).toLocaleString("id-ID")}
-          </span>
-        </div>
-        <div className="total-cash-icon">💎</div>
-      </div>
     </div>
   );
 
