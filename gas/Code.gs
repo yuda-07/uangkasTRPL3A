@@ -139,22 +139,26 @@
   // EXPENSE LOGIC
   // =====================================================
   function handleAddExpense(ss, params) {
-    const desc = (params.keterangan || "").trim();
-    const amount = parseFloat(params.jumlah);
+    const desc = (params.keterangan || params.desc || "").trim();
+    const amount = parseFloat(params.jumlah || params.amount);
 
     if (!desc || isNaN(amount)) {
-      return buildResponse({ status: "error", message: "Keterangan dan jumlah harus diisi" });
+      return buildResponse({ status: "error", message: "Data tidak lengkap" });
     }
 
     let sheet = ss.getSheetByName("Pengeluaran");
     if (!sheet) {
-      sheet = ss.insertSheet("Pengeluaran");
-      sheet.appendRow(["Tanggal", "Keterangan", "Jumlah"]);
-      const headerRange = sheet.getRange(1, 1, 1, 3);
-      headerRange.setBackground("#990000").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
-      sheet.setColumnWidth(1, 150);
-      sheet.setColumnWidth(2, 300);
-      sheet.setColumnWidth(3, 150);
+      try {
+        sheet = ss.insertSheet("Pengeluaran");
+        sheet.appendRow(["Tanggal", "Keterangan", "Jumlah"]);
+        const headerRange = sheet.getRange(1, 1, 1, 3);
+        headerRange.setBackground("#990000").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
+        sheet.setColumnWidth(1, 150);
+        sheet.setColumnWidth(2, 300);
+        sheet.setColumnWidth(3, 150);
+      } catch (e) {
+        return buildResponse({ status: "error", message: "Gagal membuat sheet: " + e.toString() });
+      }
     }
 
     const date = new Date();

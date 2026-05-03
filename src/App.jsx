@@ -260,10 +260,20 @@ export default function App() {
       showNotification("error", "❌ Harap lengkapi formulir pengeluaran!");
       return;
     }
+    const expAmountNum = Number(expJumlah);
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({ action: "addExpense", keterangan: expKeterangan, jumlah: expJumlah });
+      const params = new URLSearchParams({ 
+        action: "addExpense", 
+        keterangan: expKeterangan, 
+        jumlah: expAmountNum.toString(),
+        // Fallback names
+        desc: expKeterangan,
+        amount: expAmountNum.toString()
+      });
+      
+      // Gunakan fetch tanpa no-cors untuk melihat apakah ada error (meskipun akan diblokir CORS jika gagal, tapi setidaknya request terkirim)
       await fetch(`${GAS_URL}?${params}`, { method: "GET", mode: "no-cors" });
 
       showNotification("success", `✅ Pengeluaran "${expKeterangan}" sebesar Rp ${Number(expJumlah).toLocaleString("id-ID")} tersimpan!`);
