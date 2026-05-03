@@ -291,9 +291,6 @@ export default function App() {
 
   const isPeriodCleared = periode && minggu && !fetchingList && DAFTAR_NAMA.filter(n => studentActivePeriod[n] === Number(periode)).length === 0;
   const isWeekPaid      = periode && minggu && !fetchingList && !isPeriodCleared && siswaList.length === 0;
-  
-    </div>
-  );
 
   // Render Papan Klasemen
   const renderLeaderboard = (isFullscreen = false) => (
