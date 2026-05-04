@@ -170,26 +170,35 @@
     const sheetName = "Periode " + periode;
     let targetSheet = ss.getSheetByName(sheetName);
     
+    // AUTO CREATE SHEET JIKA TIDAK ADA
     if (!targetSheet) {
-      return buildResponse({ status: "error", message: "Sheet " + sheetName + " tidak ditemukan" });
-    }
-
-    const data = targetSheet.getDataRange().getValues();
-    let rowIndex = -1;
-    
-    for (let i = 0; i < data.length; i++) {
-      if (data[i][1] && data[i][1].toString().trim() === nama) {
-        rowIndex = i + 1;
-        break;
+      try {
+        targetSheet = ss.insertSheet(sheetName);
+        setupMinimalistSheet(targetSheet);
+        
+        // Salin daftar nama dari Periode sebelumnya agar konsisten (jika ada)
+        const prevSheetName = "Periode " + (periode - 1);
+        const prevSheet = ss.getSheetByName(prevSheetName);
+        if (prevSheet && prevSheet.getLastRow() > 1) {
+          const prevData = prevSheet.getRange(2, 2, prevSheet.getLastRow() - 1, 1).getValues();
+          prevData.forEach((row, idx) => {
+            if (row[0]) {
+              const r = targetSheet.getLastRow() + 1;
+              targetSheet.getRange(r, 1).setValue(idx + 1); // No
+              targetSheet.getRange(r, 2).setValue(row[0].toString().trim()); // Nama
+              recalcRow(targetSheet, r); // Set default "Belum bayar"
+              formatCurrencyCols(targetSheet, r);
+            }
+          });
+        }
+      } catch (e) {
+        return buildResponse({ status: "error", message: "Gagal membuat periode baru: " + e.toString() });
       }
     }
 
-    if (rowIndex === -1) {
-      return buildResponse({ status: "error", message: "Nama " + nama + " tidak ditemukan di " + sheetName });
-    }
-
+    // Gunakan writeRow untuk mencari/menambah nama dan mengupdate total secara otomatis
     const colIndex = minggu + 2; 
-    targetSheet.getRange(rowIndex, colIndex).setValue(jumlah);
+    writeRow(targetSheet, nama, colIndex, jumlah);
 
     return buildResponse({
       status: "success",

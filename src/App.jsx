@@ -100,7 +100,11 @@ export default function App() {
           if (data.status === "success") {
             const rawPaidData = data.paidData || {};
             setPaidData(rawPaidData);
-            recalculateDataIntegrity(rawPaidData);
+            const activePDict = recalculateDataIntegrity(rawPaidData);
+            
+            // Auto-select periode terbaru yang sedang berjalan
+            const maxP = Math.max(...Object.values(activePDict).concat(1));
+            setPeriode(maxP.toString());
 
             setExpenses(data.expenses || []);
             setTotalExpense(data.totalExpense || 0);
@@ -180,6 +184,7 @@ export default function App() {
     });
 
     setLeaderboard(arrLeaderboard);
+    return activePDict;
   };
 
   const showNotification = (type, message) => {
